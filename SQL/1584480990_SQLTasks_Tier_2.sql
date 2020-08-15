@@ -77,7 +77,7 @@ who signed up. Try not to use the LIMIT clause for your solution. */
 SELECT firstname,surname
 FROM Members
 WHERE joindate = (SELECT MAX(joindate)
-       				FROM Members);
+       						FROM Members);
 
 /* Q7: Produce a list of all members who have used a tennis court.
 Include in your output the name of the court, and the name of the member
@@ -102,51 +102,42 @@ the guest user's ID is always 0. Include in your output the name of the
 facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
 
-SELECT f.name, CONCAT(m.firstname, " ", m.surname) AS customername, f.membercost AS customercost
-FROM Members AS m
+SELECT CONCAT(m.firstname, " ", m.surname) AS customername, f.name AS facilityname,
+	CASE WHEN b.memid = 0 THEN b.slots*f.guestcost
+		ELSE b.slots*f.membercost END AS cost
+FROM Facilities AS f
 INNER JOIN Bookings AS b
-ON b.memid = m.memid
-INNER JOIN Facilities AS f
 ON f.facid = b.facid
-WHERE m.memid != 0 AND b.starttime LIKE "2012-09-14%" AND f.membercost > 30
-
-UNION
-
-SELECT f.name, CONCAT(m.firstname, " ", m.surname) AS customername, f.guestcost AS customercost
-FROM Members AS m
-INNER JOIN Bookings AS b
+INNER JOIN Members AS m
 ON b.memid = m.memid
-INNER JOIN Facilities AS f
-ON f.facid = b.facid
-WHERE m.memid = 0 AND b.starttime LIKE "2012-09-14%" AND f.guestcost > 30
-
-ORDER BY customercost DESC
+WHERE b.starttime LIKE "2012-09-14%" AND
+	((b.memid != 0 AND b.slots*f.membercost > 30) OR (b.memid = 0 AND b.slots*f.guestcost > 30))
+ORDER BY cost DESC;
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
 
-SELECT f.name, CONCAT(m.firstname, " ", m.surname) AS customername, f.guestcost AS customercost
-FROM Facilities AS f
-WHERE f.guestcost > 30
-	AND f.facid = (
-    			SELECT b.facid
-        		FROM Bookings AS b
-        		WHERE b.starttime LIKE "2012-09-14%"
-        		AND b.memid = (
-        						SELECT m.memid
-                    			FROM Members AS m
-                    			WHERE m.memid = 0
-                    			))
-ORDER BY customercost DESC;
+SELECT m.customername, f.facilityname,
+	CASE WHEN b.memid = 0 THEN b.slots*f.guestcost
+		ELSE b.slots*f.membercost END AS cost
+FROM Bookings AS b, (SELECT facid, name AS facilityname, membercost, guestcost FROM Facilities) AS f,
+  (SELECT memid, CONCAT(firstname, " ", surname) AS customername FROM Members) AS m
+WHERE m.memid = b.memid AND f.facid = b.facid AND b.starttime LIKE "2012-09-14%" AND
+	((b.memid != 0 AND b.slots*f.membercost > 30) OR (b.memid = 0 AND b.slots*f.guestcost > 30))
+ORDER BY cost DESC;
 
 /* PART 2: SQLite
 
 Export the country club data from PHPMyAdmin, and connect to a local SQLite instance from Jupyter notebook
-for the following questions.
+for the following questions.*/
 
+Refer to 'SQL_Project' Notebook for responses to following questions.
+
+/*
 QUESTIONS:
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
+
 
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
 
